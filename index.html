@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>羊舍管理系统</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <header class="header">
+    <h1 class="header-title">🐑 羊舍管理系统</h1>
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="dashboard">📊 仪表盘</button>
+      <button class="tab-btn" data-tab="ewes">🐏 羊只管理</button>
+      <button class="tab-btn" data-tab="lambs">🐑 羔羊管理</button>
+    </nav>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="main-content">
+
+    <!-- ==================== 仪表盘 ==================== -->
+    <section id="tab-dashboard" class="tab-content active">
+      <!-- 统计卡片 -->
+      <div class="stats-row" id="stats-cards"></div>
+
+      <!-- 重点关注 -->
+      <div class="section">
+        <h2 class="section-title">🔴 重点关注</h2>
+        <div class="alert-list" id="alert-list">
+          <p class="empty-tip">暂无需要重点关注的项目</p>
+        </div>
+      </div>
+
+      <!-- 完整时间线 -->
+      <div class="section">
+        <h2 class="section-title">📅 事件时间线（按日期排序）</h2>
+        <div class="timeline" id="timeline">
+          <p class="empty-tip">暂无事件记录</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 羊只管理 ==================== -->
+    <section id="tab-ewes" class="tab-content">
+      <div class="toolbar">
+        <input type="text" class="search-input" id="ewe-search" placeholder="🔍 搜索羊只编号...">
+        <button class="btn btn-primary" id="btn-add-ewe">+ 添加母羊</button>
+      </div>
+      <div class="card-list" id="ewe-list">
+        <p class="empty-tip">暂无母羊记录，点击上方按钮添加</p>
+      </div>
+    </section>
+
+    <!-- ==================== 羔羊管理 ==================== -->
+    <section id="tab-lambs" class="tab-content">
+      <div class="toolbar">
+        <input type="text" class="search-input" id="lamb-search" placeholder="🔍 搜索羔羊编号...">
+        <button class="btn btn-primary" id="btn-add-lamb">+ 添加羔羊</button>
+      </div>
+      <div class="card-list" id="lamb-list">
+        <p class="empty-tip">暂无羔羊记录，点击上方按钮添加</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== 母羊弹窗 ==================== -->
+  <div class="modal-overlay" id="ewe-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="ewe-modal-title">添加母羊</h3>
+        <button class="modal-close" data-close="ewe-modal">&times;</button>
+      </div>
+      <form id="ewe-form">
+        <input type="hidden" id="ewe-id">
+        <label>编号 <span class="required">*</span></label>
+        <input type="text" id="ewe-number" placeholder="如：M001" required>
+        <label>品种</label>
+        <input type="text" id="ewe-breed" placeholder="如：小尾寒羊">
+        <label>出生日期</label>
+        <input type="date" id="ewe-birthDate">
+        <label>适孕日期 <span class="required">*</span></label>
+        <input type="date" id="ewe-breedingDate" required>
+        <small class="form-hint">母羊适合配种的日期，到期后会标记为"待配种"</small>
+        <label>配种日期</label>
+        <input type="date" id="ewe-matingDate">
+        <small class="form-hint">实际配种日期，填写后自动计算预产期（+150天）</small>
+        <label>预产日期</label>
+        <input type="date" id="ewe-dueDate" readonly>
+        <small class="form-hint">根据配种日期+150天自动计算，也可在配种后手动修改</small>
+        <label>备注</label>
+        <textarea id="ewe-notes" rows="2" placeholder="可选备注信息"></textarea>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">保存</button>
+          <button type="button" class="btn btn-secondary" data-close="ewe-modal">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 羔羊弹窗 ==================== -->
+  <div class="modal-overlay" id="lamb-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="lamb-modal-title">添加羔羊</h3>
+        <button class="modal-close" data-close="lamb-modal">&times;</button>
+      </div>
+      <form id="lamb-form">
+        <input type="hidden" id="lamb-id">
+        <label>编号 <span class="required">*</span></label>
+        <input type="text" id="lamb-number" placeholder="如：L001" required>
+        <label>关联母羊 <span class="required">*</span></label>
+        <select id="lamb-mother" required></select>
+        <label>出生日期 <span class="required">*</span></label>
+        <input type="date" id="lamb-birthDate" required>
+        <label>育肥开始日期</label>
+        <input type="date" id="lamb-fatteningStart">
+        <label>育肥天数</label>
+        <input type="number" id="lamb-fatteningDays" placeholder="如：120" min="1" max="365">
+        <small class="form-hint">填写育肥天数后自动计算育肥结束日期</small>
+        <label>育肥结束日期</label>
+        <input type="date" id="lamb-fatteningEnd">
+        <small class="form-hint">可直接填写，或由育肥开始日期+天数自动计算</small>
+        <label>备注</label>
+        <textarea id="lamb-notes" rows="2" placeholder="可选备注信息"></textarea>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">保存</button>
+          <button type="button" class="btn btn-secondary" data-close="lamb-modal">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 删除确认弹窗 ==================== -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>确认删除</h3>
+        <button class="modal-close" data-close="confirm-modal">&times;</button>
+      </div>
+      <p id="confirm-message" style="padding:16px;text-align:center;"></p>
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="btn-confirm-delete">确认删除</button>
+        <button class="btn btn-secondary" data-close="confirm-modal">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
