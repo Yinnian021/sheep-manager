@@ -24,6 +24,13 @@
     <section id="tab-dashboard" class="tab-content active">
       <!-- 统计卡片 -->
       <div class="stats-row" id="stats-cards"></div>
+      <div class="stats-row" id="stats-cards-2"></div>
+
+      <!-- 年度羔羊生产统计 -->
+      <div class="section" id="annual-stats-section">
+        <h2 class="section-title">📈 年度羔羊生产统计</h2>
+        <div class="annual-stats" id="annual-stats"></div>
+      </div>
 
       <!-- 重点关注 -->
       <div class="section">
@@ -46,10 +53,10 @@
     <section id="tab-ewes" class="tab-content">
       <div class="toolbar">
         <input type="text" class="search-input" id="ewe-search" placeholder="🔍 搜索羊只编号...">
-        <button class="btn btn-primary" id="btn-add-ewe">+ 添加母羊</button>
+        <button class="btn btn-primary" id="btn-add-ewe">+ 添加羊只</button>
       </div>
       <div class="card-list" id="ewe-list">
-        <p class="empty-tip">暂无母羊记录，点击上方按钮添加</p>
+        <p class="empty-tip">暂无羊只记录，点击上方按钮添加</p>
       </div>
     </section>
 
@@ -78,17 +85,24 @@
         <input type="text" id="ewe-number" placeholder="如：M001" required>
         <label>品种</label>
         <input type="text" id="ewe-breed" placeholder="如：小尾寒羊">
+        <label>性别 <span class="required">*</span></label>
+        <select id="ewe-gender" required>
+          <option value="female">母</option>
+          <option value="male">公</option>
+        </select>
         <label>出生日期</label>
         <input type="date" id="ewe-birthDate">
-        <label>适孕日期 <span class="required">*</span></label>
-        <input type="date" id="ewe-breedingDate" required>
-        <small class="form-hint">母羊适合配种的日期，到期后会标记为"待配种"</small>
-        <label>配种日期</label>
-        <input type="date" id="ewe-matingDate">
-        <small class="form-hint">实际配种日期，填写后自动计算预产期（+150天）</small>
-        <label>预产日期</label>
-        <input type="date" id="ewe-dueDate" readonly>
-        <small class="form-hint">根据配种日期+150天自动计算，也可在配种后手动修改</small>
+        <div id="ewe-breeding-fields">
+          <label>适孕日期 <span class="required breeding-req">*</span></label>
+          <input type="date" id="ewe-breedingDate">
+          <small class="form-hint">母羊适合配种的日期，到期后会标记为"待配种"</small>
+          <label>配种日期</label>
+          <input type="date" id="ewe-matingDate">
+          <small class="form-hint">实际配种日期，填写后自动计算预产期（+150天）</small>
+          <label>预产日期</label>
+          <input type="date" id="ewe-dueDate" readonly>
+          <small class="form-hint">根据配种日期+150天自动计算，也可在配种后手动修改</small>
+        </div>
         <label>备注</label>
         <textarea id="ewe-notes" rows="2" placeholder="可选备注信息"></textarea>
         <div class="modal-actions">
@@ -110,6 +124,11 @@
         <input type="hidden" id="lamb-id">
         <label>编号 <span class="required">*</span></label>
         <input type="text" id="lamb-number" placeholder="如：L001" required>
+        <label>性别 <span class="required">*</span></label>
+        <select id="lamb-gender" required>
+          <option value="male">公</option>
+          <option value="female">母</option>
+        </select>
         <label>关联母羊 <span class="required">*</span></label>
         <select id="lamb-mother" required></select>
         <label>出生日期 <span class="required">*</span></label>
