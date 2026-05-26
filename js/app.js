@@ -70,13 +70,18 @@ const Store = {
     return this.getLambs().filter(l => l.motherId === eweId);
   },
 
-  // 判断母羊状态
+  // 判断羊只状态
   getEweStatus(ewe) {
+    if (ewe.gender === 'male') return 'ram';      // 公羊
     const lambs = this.getLambsByEwe(ewe.id);
     const hasBorn = lambs.length > 0;
     if (hasBorn) return 'born';      // 已生产
     if (ewe.matingDate) return 'mated'; // 已配种
     return 'empty';                   // 空怀
+  },
+  // 获取存栏羔羊（未出栏的）
+  getCurrentLambs() {
+    return this.getLambs().filter(l => this.getLambStatus(l) !== 'sold');
   },
 
   // 判断羔羊状态
@@ -96,7 +101,7 @@ function initSampleData() {
 
   const ewes = [
     {
-      id: genId(), number: 'M001', breed: '小尾寒羊',
+      id: genId(), number: 'M001', breed: '小尾寒羊', gender: 'female',
       birthDate: '2024-03-15',
       breedingDate: '2026-04-15',
       matingDate: '2026-04-20',
@@ -104,7 +109,7 @@ function initSampleData() {
       notes: '体格健壮，第一胎'
     },
     {
-      id: genId(), number: 'M002', breed: '杜泊羊',
+      id: genId(), number: 'M002', breed: '杜泊羊', gender: 'female',
       birthDate: '2024-06-20',
       breedingDate: '2026-06-01',
       matingDate: '',
@@ -112,7 +117,7 @@ function initSampleData() {
       notes: ''
     },
     {
-      id: genId(), number: 'M003', breed: '小尾寒羊',
+      id: genId(), number: 'M003', breed: '小尾寒羊', gender: 'female',
       birthDate: '2024-01-10',
       breedingDate: '2026-03-01',
       matingDate: '2026-03-10',
@@ -120,7 +125,7 @@ function initSampleData() {
       notes: '第二胎'
     },
     {
-      id: genId(), number: 'M004', breed: '湖羊',
+      id: genId(), number: 'M004', breed: '湖羊', gender: 'female',
       birthDate: '2024-08-05',
       breedingDate: '2026-01-01',
       matingDate: '2026-01-15',
@@ -128,7 +133,7 @@ function initSampleData() {
       notes: '重点关注，预产期临近'
     },
     {
-      id: genId(), number: 'M005', breed: '杜泊羊',
+      id: genId(), number: 'M005', breed: '杜泊羊', gender: 'female',
       birthDate: '2024-05-10',
       breedingDate: '2026-05-01',
       matingDate: '',
@@ -136,12 +141,28 @@ function initSampleData() {
       notes: '已到适孕期，需尽快配种'
     },
     {
-      id: genId(), number: 'M006', breed: '小尾寒羊',
+      id: genId(), number: 'M006', breed: '小尾寒羊', gender: 'female',
       birthDate: '2023-11-20',
       breedingDate: '2025-08-01',
       matingDate: '2025-08-15',
       dueDate: addDays('2025-08-15', PREGNANCY_DAYS),
       notes: '已生产，双羔'
+    },
+    {
+      id: genId(), number: 'G001', breed: '杜泊羊', gender: 'male',
+      birthDate: '2023-06-10',
+      breedingDate: '',
+      matingDate: '',
+      dueDate: '',
+      notes: '种公羊'
+    },
+    {
+      id: genId(), number: 'G002', breed: '小尾寒羊', gender: 'male',
+      birthDate: '2024-02-15',
+      breedingDate: '',
+      matingDate: '',
+      dueDate: '',
+      notes: '育成公羊'
     }
   ];
 
@@ -150,7 +171,7 @@ function initSampleData() {
   const m006 = ewes[5]; // M006 已生产
   const lambs = [
     {
-      id: genId(), number: 'L001', motherId: m006.id,
+      id: genId(), number: 'L001', motherId: m006.id, gender: 'male',
       birthDate: '2026-01-10',
       fatteningStart: '2026-01-15',
       fatteningEnd: '2026-05-15',
@@ -158,7 +179,7 @@ function initSampleData() {
       notes: '公羔，生长快'
     },
     {
-      id: genId(), number: 'L002', motherId: m006.id,
+      id: genId(), number: 'L002', motherId: m006.id, gender: 'female',
       birthDate: '2026-01-10',
       fatteningStart: '2026-01-15',
       fatteningEnd: addDays('2026-01-15', 145),
@@ -166,7 +187,7 @@ function initSampleData() {
       notes: '母羔，即将出栏'
     },
     {
-      id: genId(), number: 'L003', motherId: m006.id,
+      id: genId(), number: 'L003', motherId: m006.id, gender: 'female',
       birthDate: '2026-01-10',
       fatteningStart: '2026-03-01',
       fatteningEnd: addDays('2026-03-01', 150),
@@ -186,6 +207,8 @@ function getTimelineEvents() {
   const events = [];
 
   ewes.forEach(ewe => {
+    const genderLabel = ewe.gender === 'male' ? '公' : '母';
+    if (ewe.gender === 'male') return; // 公羊不产生繁殖事件
     // 适孕事件
     if (ewe.breedingDate) {
       events.push({
@@ -194,32 +217,23 @@ function getTimelineEvents() {
         cssClass: 'type-breeding',
         date: ewe.breedingDate,
         desc: `${ewe.number}（${ewe.breed || '未知品种'}）进入适孕期`,
-        sheepId: ewe.id,
-        sheepNumber: ewe.number
+        sheepId: ewe.id, sheepNumber: ewe.number
       });
     }
-    // 配种事件
     if (ewe.matingDate) {
       events.push({
-        type: 'mating',
-        label: '配种',
-        cssClass: 'type-mating',
+        type: 'mating', label: '配种', cssClass: 'type-mating',
         date: ewe.matingDate,
         desc: `${ewe.number}（${ewe.breed || '未知品种'}）完成配种`,
-        sheepId: ewe.id,
-        sheepNumber: ewe.number
+        sheepId: ewe.id, sheepNumber: ewe.number
       });
     }
-    // 预产事件
     if (ewe.dueDate) {
       events.push({
-        type: 'due',
-        label: '预产',
-        cssClass: 'type-due',
+        type: 'due', label: '预产', cssClass: 'type-due',
         date: ewe.dueDate,
         desc: `${ewe.number}（${ewe.breed || '未知品种'}）预产期`,
-        sheepId: ewe.id,
-        sheepNumber: ewe.number
+        sheepId: ewe.id, sheepNumber: ewe.number
       });
     }
   });
@@ -227,29 +241,22 @@ function getTimelineEvents() {
   lambs.forEach(lamb => {
     const motherEwe = ewes.find(e => e.id === lamb.motherId);
     const motherNum = motherEwe ? motherEwe.number : '未知母羊';
+    const gLabel = lamb.gender === 'male' ? '♂' : '♀';
 
-    // 出生事件
     if (lamb.birthDate) {
       events.push({
-        type: 'birth',
-        label: '羔羊出生',
-        cssClass: 'type-birth',
+        type: 'birth', label: '羔羊出生', cssClass: 'type-birth',
         date: lamb.birthDate,
-        desc: `${lamb.number} 出生（母羊 ${motherNum}）`,
-        sheepId: lamb.id,
-        sheepNumber: lamb.number
+        desc: `${lamb.number}（${gLabel}）出生（母羊 ${motherNum}）`,
+        sheepId: lamb.id, sheepNumber: lamb.number
       });
     }
-    // 育肥结束事件
     if (lamb.fatteningEnd) {
       events.push({
-        type: 'fattening',
-        label: '育肥结束',
-        cssClass: 'type-fattening',
+        type: 'fattening', label: '育肥结束', cssClass: 'type-fattening',
         date: lamb.fatteningEnd,
-        desc: `${lamb.number} 育肥期结束，可出栏（母羊 ${motherNum}）`,
-        sheepId: lamb.id,
-        sheepNumber: lamb.number
+        desc: `${lamb.number}（${gLabel}）育肥期结束，可出栏（母羊 ${motherNum}）`,
+        sheepId: lamb.id, sheepNumber: lamb.number
       });
     }
   });
@@ -272,6 +279,7 @@ function getAlerts() {
   const today = todayStr();
 
   ewes.forEach(ewe => {
+    if (ewe.gender === 'male') return; // 公羊不触发繁殖警报
     // 已到适孕期但未配种
     if (ewe.breedingDate && !ewe.matingDate) {
       const days = daysFromToday(ewe.breedingDate);
@@ -355,21 +363,43 @@ function getAlerts() {
 
 // ========== UI 渲染 ==========
 
+// ---------- 年度羔羊生产统计 ----------
+function getAnnualStats() {
+  const lambs = Store.getLambs();
+  const stats = {}; // { year: { male: 0, female: 0 } }
+
+  lambs.forEach(lamb => {
+    if (!lamb.birthDate) return;
+    const year = lamb.birthDate.slice(0, 4);
+    if (!stats[year]) stats[year] = { male: 0, female: 0 };
+    if (lamb.gender === 'male') stats[year].male++;
+    else stats[year].female++;
+  });
+
+  // 按年份降序
+  return Object.entries(stats)
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([year, data]) => ({ year, ...data, total: data.male + data.female }));
+}
+
 // ---------- 渲染仪表盘 ----------
 function renderDashboard() {
   const ewes = Store.getEwes();
   const lambs = Store.getLambs();
+  const currentLambs = Store.getCurrentLambs();
 
   // 统计
-  const totalEwes = ewes.length;
-  const matedEwes = ewes.filter(e => e.matingDate && Store.getEweStatus(e) === 'mated').length;
-  const emptyEwes = ewes.filter(e => Store.getEweStatus(e) === 'empty').length;
+  const femaleEwes = ewes.filter(e => e.gender !== 'male');
+  const ramCount = ewes.filter(e => e.gender === 'male').length;
+  const totalEwes = femaleEwes.length;
+  const matedEwes = femaleEwes.filter(e => e.matingDate && Store.getEweStatus(e) === 'mated').length;
+  const emptyEwes = femaleEwes.filter(e => Store.getEweStatus(e) === 'empty').length;
   const totalLambs = lambs.length;
 
   document.getElementById('stats-cards').innerHTML = `
     <div class="stat-card">
       <div class="stat-number">${totalEwes}</div>
-      <div class="stat-label">母羊总数</div>
+      <div class="stat-label">母羊数量</div>
     </div>
     <div class="stat-card warn">
       <div class="stat-number">${matedEwes}</div>
@@ -379,11 +409,55 @@ function renderDashboard() {
       <div class="stat-number">${emptyEwes}</div>
       <div class="stat-label">待配种</div>
     </div>
-    <div class="stat-card danger">
-      <div class="stat-number">${totalLambs}</div>
-      <div class="stat-label">羔羊总数</div>
+    <div class="stat-card">
+      <div class="stat-number">${ramCount}</div>
+      <div class="stat-label">公羊数量</div>
     </div>
   `;
+
+  document.getElementById('stats-cards-2').innerHTML = `
+    <div class="stat-card danger">
+      <div class="stat-number">${totalLambs}</div>
+      <div class="stat-label">总生产羔羊</div>
+    </div>
+    <div class="stat-card info">
+      <div class="stat-number">${currentLambs.length}</div>
+      <div class="stat-label">存栏羔羊</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">${lambs.filter(l => l.gender === 'male').length}</div>
+      <div class="stat-label">公羔总数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">${lambs.filter(l => l.gender === 'female').length}</div>
+      <div class="stat-label">母羔总数</div>
+    </div>
+  `;
+
+  // 年度统计
+  const annualStats = getAnnualStats();
+  const annualDiv = document.getElementById('annual-stats');
+  if (annualStats.length === 0) {
+    annualDiv.innerHTML = '<p class="empty-tip">暂无羔羊生产记录</p>';
+  } else {
+    annualDiv.innerHTML = `
+      <table class="annual-table">
+        <thead>
+          <tr><th>年份</th><th>公羔（只）</th><th>母羔（只）</th><th>合计</th></tr>
+        </thead>
+        <tbody>
+          ${annualStats.map(s => `
+            <tr>
+              <td class="td-year">${s.year}年</td>
+              <td class="td-male">♂ ${s.male}</td>
+              <td class="td-female">♀ ${s.female}</td>
+              <td><strong>${s.total}</strong></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
 
   // 重点关注
   const alerts = getAlerts();
@@ -450,12 +524,13 @@ function renderEweList(filterText) {
   const statusMap = {
     empty:   { cls: 'empty',   label: '空怀/待配种' },
     mated:   { cls: 'mated',   label: '已配种' },
-    born:    { cls: 'born',    label: '已生产' }
+    born:    { cls: 'born',    label: '已生产' },
+    ram:     { cls: 'empty',   label: '公羊' }
   };
 
   const list = document.getElementById('ewe-list');
   if (filtered.length === 0) {
-    list.innerHTML = '<p class="empty-tip">暂无符合条件的母羊</p>';
+    list.innerHTML = '<p class="empty-tip">暂无符合条件的羊只</p>';
     return;
   }
 
@@ -463,16 +538,22 @@ function renderEweList(filterText) {
     const status = Store.getEweStatus(ewe);
     const s = statusMap[status] || statusMap.empty;
     const lambCount = Store.getLambsByEwe(ewe.id).length;
+    const genderTag = ewe.gender === 'male'
+      ? '<span class="gender-tag male">♂公</span>'
+      : '<span class="gender-tag female">♀母</span>';
     let subInfo = [`品种: ${ewe.breed || '--'}`];
-    if (ewe.matingDate) subInfo.push(`配种: ${fmtDate(ewe.matingDate)}`);
-    if (ewe.dueDate) subInfo.push(`预产: ${fmtDate(ewe.dueDate)}`);
+    if (ewe.gender !== 'male') {
+      if (ewe.matingDate) subInfo.push(`配种: ${fmtDate(ewe.matingDate)}`);
+      if (ewe.dueDate) subInfo.push(`预产: ${fmtDate(ewe.dueDate)}`);
+    }
     if (lambCount > 0) subInfo.push(`羔羊: ${lambCount}只`);
 
+    const avatar = ewe.gender === 'male' ? '🐃' : '🐏';
     return `
       <div class="sheep-card status-${status}" data-id="${ewe.id}" data-type="ewe">
-        <div class="card-avatar ewe">🐏</div>
+        <div class="card-avatar ewe">${avatar}</div>
         <div class="card-info">
-          <div class="card-title">${ewe.number}</div>
+          <div class="card-title">${ewe.number} ${genderTag}</div>
           <div class="card-sub">${subInfo.join(' | ')}</div>
         </div>
         <span class="card-status ${s.cls}">${s.label}</span>
@@ -508,6 +589,9 @@ function renderLambList(filterText) {
     const mother = ewes.find(e => e.id === lamb.motherId);
     const status = Store.getLambStatus(lamb);
     const s = statusMap[status] || statusMap.nursing;
+    const genderTag = lamb.gender === 'male'
+      ? '<span class="gender-tag male">♂公</span>'
+      : '<span class="gender-tag female">♀母</span>';
 
     let subInfo = [`母羊: ${mother ? mother.number : '--'}`];
     if (lamb.fatteningStart) subInfo.push(`育肥开始: ${fmtDate(lamb.fatteningStart)}`);
@@ -517,7 +601,7 @@ function renderLambList(filterText) {
       <div class="sheep-card status-${status === 'fattening' ? 'mated' : status === 'nursing' ? 'nursing' : 'empty'}" data-id="${lamb.id}" data-type="lamb">
         <div class="card-avatar lamb">🐑</div>
         <div class="card-info">
-          <div class="card-title">${lamb.number}</div>
+          <div class="card-title">${lamb.number} ${genderTag}</div>
           <div class="card-sub">${subInfo.join(' | ')}</div>
         </div>
         <span class="card-status ${s.cls}">${s.label}</span>
@@ -547,17 +631,38 @@ function closeModal(modalId) {
 }
 
 // ---------- 母羊弹窗 ----------
+function toggleBreedingFields() {
+  const gender = document.getElementById('ewe-gender').value;
+  const breedingDiv = document.getElementById('ewe-breeding-fields');
+  const titleEl = document.getElementById('ewe-modal-title');
+  const eweId = document.getElementById('ewe-id').value;
+  const isEdit = !!eweId;
+
+  if (gender === 'male') {
+    breedingDiv.style.display = 'none';
+    titleEl.textContent = isEdit ? '编辑公羊' : '添加公羊';
+  } else {
+    breedingDiv.style.display = '';
+    titleEl.textContent = isEdit ? '编辑母羊' : '添加母羊';
+  }
+}
+
 function openEweModal(ewe) {
   const isEdit = !!ewe;
-  document.getElementById('ewe-modal-title').textContent = isEdit ? '编辑母羊' : '添加母羊';
+  const isMale = ewe && ewe.gender === 'male';
+  document.getElementById('ewe-modal-title').textContent = isEdit
+    ? (isMale ? '编辑公羊' : '编辑母羊')
+    : '添加羊只';
   document.getElementById('ewe-id').value = ewe ? ewe.id : '';
   document.getElementById('ewe-number').value = ewe ? ewe.number : '';
   document.getElementById('ewe-breed').value = ewe ? ewe.breed : '';
+  document.getElementById('ewe-gender').value = ewe ? (ewe.gender || 'female') : 'female';
   document.getElementById('ewe-birthDate').value = ewe ? ewe.birthDate : '';
   document.getElementById('ewe-breedingDate').value = ewe ? ewe.breedingDate : '';
   document.getElementById('ewe-matingDate').value = ewe ? ewe.matingDate : '';
   document.getElementById('ewe-dueDate').value = ewe ? ewe.dueDate : '';
   document.getElementById('ewe-notes').value = ewe ? (ewe.notes || '') : '';
+  toggleBreedingFields();
   openModal('ewe-modal');
 }
 
@@ -565,22 +670,24 @@ function saveEwe(e) {
   e.preventDefault();
 
   const id = document.getElementById('ewe-id').value;
+  const gender = document.getElementById('ewe-gender').value;
   const data = {
     number: document.getElementById('ewe-number').value.trim(),
     breed: document.getElementById('ewe-breed').value.trim(),
+    gender: gender,
     birthDate: document.getElementById('ewe-birthDate').value,
-    breedingDate: document.getElementById('ewe-breedingDate').value,
-    matingDate: document.getElementById('ewe-matingDate').value,
-    dueDate: document.getElementById('ewe-dueDate').value,
+    breedingDate: gender === 'male' ? '' : document.getElementById('ewe-breedingDate').value,
+    matingDate: gender === 'male' ? '' : document.getElementById('ewe-matingDate').value,
+    dueDate: gender === 'male' ? '' : document.getElementById('ewe-dueDate').value,
     notes: document.getElementById('ewe-notes').value.trim()
   };
 
   if (!data.number) {
-    alert('请输入母羊编号');
+    alert('请输入羊只编号');
     return;
   }
-  if (!data.breedingDate) {
-    alert('请选择适孕日期');
+  if (gender !== 'male' && !data.breedingDate) {
+    alert('母羊请选择适孕日期');
     return;
   }
 
@@ -612,7 +719,7 @@ function saveEwe(e) {
 // ---------- 羔羊弹窗 ----------
 function populateMotherSelect() {
   const select = document.getElementById('lamb-mother');
-  const ewes = Store.getEwes();
+  const ewes = Store.getEwes().filter(e => e.gender !== 'male');
   select.innerHTML = '<option value="">请选择母羊</option>' +
     ewes.map(e => `<option value="${e.id}">${e.number}（${e.breed || '未知'}）</option>`).join('');
 }
@@ -623,6 +730,7 @@ function openLambModal(lamb) {
   document.getElementById('lamb-modal-title').textContent = isEdit ? '编辑羔羊' : '添加羔羊';
   document.getElementById('lamb-id').value = lamb ? lamb.id : '';
   document.getElementById('lamb-number').value = lamb ? lamb.number : '';
+  document.getElementById('lamb-gender').value = lamb ? (lamb.gender || 'male') : 'male';
   document.getElementById('lamb-mother').value = lamb ? lamb.motherId : '';
   document.getElementById('lamb-birthDate').value = lamb ? lamb.birthDate : '';
   document.getElementById('lamb-fatteningStart').value = lamb ? lamb.fatteningStart : '';
@@ -638,6 +746,7 @@ function saveLamb(e) {
   const id = document.getElementById('lamb-id').value;
   const data = {
     number: document.getElementById('lamb-number').value.trim(),
+    gender: document.getElementById('lamb-gender').value,
     motherId: document.getElementById('lamb-mother').value,
     birthDate: document.getElementById('lamb-birthDate').value,
     fatteningStart: document.getElementById('lamb-fatteningStart').value,
@@ -693,7 +802,7 @@ let pendingDelete = null; // { type: 'ewe'|'lamb', id: string, number: string }
 function openDeleteConfirm(type, id, number) {
   pendingDelete = { type, id, number };
   document.getElementById('confirm-message').textContent =
-    `确定要删除${type === 'ewe' ? '母羊' : '羔羊'}「${number}」吗？${type === 'ewe' ? '关联的羔羊记录不会自动删除。' : ''}此操作不可撤销。`;
+    `确定要删除${type === 'ewe' ? '羊只' : '羔羊'}「${number}」吗？${type === 'ewe' ? '关联的羔羊记录也将一并删除。' : ''}此操作不可撤销。`;
   openModal('confirm-modal');
 }
 
@@ -761,6 +870,9 @@ function bindEvents() {
   document.getElementById('lamb-search').addEventListener('input', (e) => {
     renderLambList(e.target.value);
   });
+
+  // 性别切换时显示/隐藏繁殖字段
+  document.getElementById('ewe-gender').addEventListener('change', toggleBreedingFields);
 
   // 配种日期变化时自动计算预产日期
   document.getElementById('ewe-matingDate').addEventListener('change', function() {
