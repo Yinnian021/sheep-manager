@@ -506,6 +506,51 @@ form input[readonly] {
   font-size: 0.9rem;
 }
 
+/* ---------- 年度统计表 ---------- */
+.annual-stats {
+  overflow-x: auto;
+}
+
+.annual-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.annual-table th,
+.annual-table td {
+  padding: 8px 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.annual-table th {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.annual-table td { color: var(--text); }
+.annual-table .td-year { font-weight: 600; }
+.annual-table .td-male { color: var(--info); }
+.annual-table .td-female { color: #E91E63; }
+
+.annual-table tbody tr:hover { background: #FAFAFA; }
+
+/* ---------- 性别标签 ---------- */
+.gender-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin-left: 4px;
+}
+
+.gender-tag.male   { background: var(--info-light); color: var(--info); }
+.gender-tag.female { background: #FCE4EC; color: #E91E63; }
+
 /* ---------- 响应式 - 桌面端 ---------- */
 @media (min-width: 600px) {
   .stats-row {
